@@ -351,22 +351,7 @@ L.control.layers(overlayMaps,null).addTo(map);
 // Create the marker that the user drags to add their message to the map
 var marker;
 
-// every time the marker is dragged, update the form
-marker.on('dragend', function(e) {
-    marker.openPopup();
-    // When the user clicks Add
-    L.DomEvent.addListener(L.DomUtil.get('add-button'), 'click', function() {
-        // First, clean the potential-HTML they've added to the value.
-        var message = L.DomUtil.get('message').value;
-        // Get the current draggable marker's position and GeoJSON representation
-        var geojson = marker.toGeoJSON();
-        //geojson.properties['marker-color'] = color;
-        geojson.properties.title = message;
-        // And save it to Firebase
-        base.push(geojson);
-        marker.closePopup();
-    });
-});	
+
 	
 // with a cap of 200, listen for new markers being added to the map
 base.limit(200).on('child_added', function(snapshot) {
@@ -411,6 +396,24 @@ function ajouter(element)
     .bindPopup('<input type="text" id="message" /><br /><button id="add-button">Add</button>')
     .addTo(map)
     .openPopup();
+    
+    // every time the marker is dragged, update the form
+marker.on('dragend', function(e) {
+    marker.openPopup();
+    // When the user clicks Add
+    L.DomEvent.addListener(L.DomUtil.get('add-button'), 'click', function() {
+        // First, clean the potential-HTML they've added to the value.
+        var message = L.DomUtil.get('message').value;
+        // Get the current draggable marker's position and GeoJSON representation
+        var geojson = marker.toGeoJSON();
+        //geojson.properties['marker-color'] = color;
+        geojson.properties.title = message;
+        // And save it to Firebase
+        base.push(geojson);
+        marker.closePopup();
+    });
+});	
+    
 }
 
 function edit(element)
@@ -435,12 +438,12 @@ var p = document.createElement('p');
 d.appendChild(p);
 p.onclick=function() { ajouter(element) };
 p.setAttribute('class', 'ctxline');
-p.innerHTML = "Renommer";
+p.innerHTML = "Ajouter";
 var p2 = document.createElement('p');
 d.appendChild(p2);
 p2.onclick=function() { edit(element)}; 
 p2.setAttribute('class', 'ctxline');
-p2.innerHTML = "Ajouter";
+p2.innerHTML = "Editer";
 return false;
 }
 
