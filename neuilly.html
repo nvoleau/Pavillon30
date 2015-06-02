@@ -349,17 +349,7 @@ L.control.layers(overlayMaps,null).addTo(map);
 
 //Ajout d'un marqueur pour enregistrement de donn�e et affichage par la suite
 // Create the marker that the user drags to add their message to the map
-var marker = L.marker([0, 0], {
-    draggable: true,
-    icon: L.mapbox.marker.icon({
-    'marker-color': color
-    })
-    // Add a form to that marker that lets them specify a message and click Add
-    // to add the data.
-})
-    .bindPopup('<input type="text" id="message" /><br /><button id="add-button">Add</button>')
-    .addTo(map)
-    .openPopup();
+var marker;
 
 // every time the marker is dragged, update the form
 marker.on('dragend', function(e) {
@@ -408,9 +398,19 @@ document.onmousemove = function(e)
 };
  
 
-function rename(element)
+function ajouter(element)
 {
-alert("Renommer");
+	L.marker([element.latlng.lat , element.e.latlng.lng], {
+    draggable: true,
+    icon: L.mapbox.marker.icon({
+    'marker-color': color
+    })
+    // Add a form to that marker that lets them specify a message and click Add
+    // to add the data.
+})
+    .bindPopup('<input type="text" id="message" /><br /><button id="add-button">Add</button>')
+    .addTo(map)
+    .openPopup();
 }
 
 function edit(element)
@@ -433,14 +433,14 @@ d.onclick = function(e) { element.parentNode.removeChild(d);}
 document.body.onclick = function(e) { element.parentNode.removeChild(d);}
 var p = document.createElement('p');
 d.appendChild(p);
-p.onclick=function() { rename(element) };
+p.onclick=function() { ajouter(element) };
 p.setAttribute('class', 'ctxline');
 p.innerHTML = "Renommer";
 var p2 = document.createElement('p');
 d.appendChild(p2);
 p2.onclick=function() { edit(element)}; 
 p2.setAttribute('class', 'ctxline');
-p2.innerHTML = "Editer";
+p2.innerHTML = "Ajouter";
 return false;
 }
 
