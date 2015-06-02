@@ -1,0 +1,450 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8 />
+<title>NEUILLY PLAISANCE</title>
+<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+<script src='http://bftriathlon.fr/compet/mapbox.js'></script>
+<script src='https://cdn.firebase.com/js/client/2.2.1/firebase.js'></script>
+<link href='https://api.tiles.mapbox.com/mapbox.js/v2.1.9/mapbox.css' rel='stylesheet' />
+<style>
+  body { margin:0; padding:0; }
+  #map { position:absolute; top:0; bottom:0; width:100%; }
+  .filter-ui {
+  background:#fff;
+  position:absolute;
+  top:10px;
+  right:10px;
+  z-index:100;
+  padding:10px;
+  border-radius:3px;
+  }
+  
+  .info {
+			padding: 6px 8px;
+			font: 14px/16px Arial, Helvetica, sans-serif;
+			background: white;
+			background: rgba(255,255,255,0.8);
+			box-shadow: 0 0 15px rgba(0,0,0,0.2);
+			border-radius: 5px;
+		}
+		.info h4 {
+			margin: 0 0 5px;
+			color: #777;
+		}
+
+		.legend {
+			text-align: left;
+			line-height: 18px;
+			color: #555;
+		}
+		.legend i {
+			width: 18px;
+			height: 18px;
+			float: left;
+			margin-right: 8px;
+			opacity: 0.7;
+		}
+  
+		.ctxmenu
+{
+  position:absolute;    
+  min-width: 128px;
+  height:auto;
+  padding: 8px;
+  margin:0;
+  margin-left:32px;
+  margin-top:-16px;
+  border: 1px solid #999;
+  background: #F8F8F8;
+  box-shadow: 2px 2px 2px #AAA;
+  z-index:11;
+  overflow: visible;
+}
+.ctxline
+{
+  display:block;
+  margin:0px;
+  padding:2px 2px 2px 8px;
+  border:1px solid #F8F8F8;
+  border-radius:3px;
+  font-size:13px;
+  font-family:Arial, Helvetica, sans-serif;
+  overflow:visible;
+}
+.ctxline:hover
+{
+  border:1px solid #BBB;
+  background-color: #F0F0F0;
+  background-image: -moz-linear-gradient(top, #ffffff, #e6e6e6);
+  background-image: -ms-linear-gradient(top, #ffffff, #e6e6e6);
+  background-image: -webkit-gradient(linear, 0 0, 0 100%,
+    from(#ffffff), to(#e6e6e6));
+  background-image: -webkit-linear-gradient(top, #ffffff, #e6e6e6);
+  background-image: -o-linear-gradient(top, #ffffff, #e6e6e6);
+  background-image: linear-gradient(top, #ffffff, #e6e6e6);
+  background-repeat: repeat-x;
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff',
+    endColorstr='#e6e6e6', GradientType=0);
+}
+</style>
+</head>
+<body>
+<nav id='filters' class='filter-ui'></nav>
+<div id='map' oncontextmenu="return clickDroit(this)"></div>
+<script type="text/javascript" src="impot2011.js"></script>
+<script>
+L.mapbox.accessToken = 'pk.eyJ1IjoibnZvbGVhdSIsImEiOiJlMGVjMWYzMjcxZGIxZmMzYTRhODdiZWJhYTExNjQ4ZSJ9._pkv5pbLxP3HILtsFw2VOQ';
+var map = L.mapbox.map('map', 'nvoleau.m9ih30bb');
+
+
+//connection firebase
+var base = new Firebase('https://resplendent-inferno-6671.firebaseio.com/'),
+    // generate a random color for the marker, just for fun.
+    color = '#' + [
+        (~~(Math.random() * 16)).toString(16),
+        (~~(Math.random() * 16)).toString(16),
+        (~~(Math.random() * 16)).toString(16)].join('');
+//fin connection
+
+
+//permet de mettre une couleur en fonction d une donn?e
+function styleMap(Feature)
+	{
+	
+	return {fillColor: getColor(Feature.properties.RFM2011_NBMEN11),
+		weight: (parseFloat(Feature.properties.RFST2011IRI_PMIMP11) > 0 && Feature.properties.NOM_COM=="Neuilly-Plaisance")? 2 : 0,
+		opacity: 1,
+		color: 'white',
+		dashArray: (parseFloat(Feature.properties.RFST2011IRI_PMIMP11) > 0 && Feature.properties.NOM_COM=="Neuilly-Plaisance") ? '3' : '0',
+		fillOpacity: (parseFloat(Feature.properties.RFST2011IRI_PMIMP11) > 0 && Feature.properties.NOM_COM=="Neuilly-Plaisance")?  0.6 : 0
+		};
+	}
+
+	
+	
+	
+//attribution de la couleur
+function getColor(d)
+{
+	return parseFloat(d) > 2000 ? '#800026' :
+			       parseFloat(d)> 1500  ? '#BD0026' :
+			       parseFloat(d)> 1000  ? '#E31A1C' :
+			       parseFloat(d)> 950  ? '#FC4E2A' :
+			       parseFloat(d)> 900   ? '#FD8D3C' :
+			       parseFloat(d)> 850   ? '#FEB24C' :
+			       parseFloat(d)> 800   ? '#FED976' :
+			                  '#FFEDA0';
+}
+
+
+//par des menage impose
+function styleMapPartMenageImpose(Feature)
+	{
+	
+	return {fillColor: getColorPourcent(Feature.properties.RFST2011IRI_PMIMP11),
+		weight: (parseFloat(Feature.properties.RFST2011IRI_PMIMP11) > 0 && Feature.properties.NOM_COM=="Neuilly-Plaisance") ? 2 : 0,
+		opacity: 1,
+		color: 'white',
+		dashArray: (parseFloat(Feature.properties.RFST2011IRI_PMIMP11) > 0 && Feature.properties.NOM_COM=="Neuilly-Plaisance") ? '3' : '0',
+		fillOpacity: (parseFloat(Feature.properties.RFST2011IRI_PMIMP11) > 0 && Feature.properties.NOM_COM=="Neuilly-Plaisance") ?  0.6 : 0
+		};
+	}
+//attribution de la couleur
+function getColorPourcent(d)
+{
+	return parseFloat(d) > 100 ? '#800026' :
+			       parseFloat(d)> 90  ? '#BD0026' :
+			       parseFloat(d)> 80  ? '#E31A1C' :
+			       parseFloat(d)> 70  ? '#FC4E2A' :
+			       parseFloat(d)> 60   ? '#FD8D3C' :
+			       parseFloat(d)> 50   ? '#FEB24C' :
+			       parseFloat(d)> 40   ? '#FED976' :
+			                  '#FFEDA0';
+}
+
+function highlightFeature(e) {
+			var layer = e.target;
+
+			/**layer.setStyle({
+				weight: 5,
+				color: '#666',
+				dashArray: '',
+				fillOpacity: 0.7
+			});
+
+			if (!L.Browser.ie && !L.Browser.opera) {
+				layer.bringToFront();
+			}**/
+
+			info.update(layer.feature.properties);
+		}
+		
+function resetHighlight(e) {
+			geoson.resetStyle(e.target);
+			info.update();
+		}
+		
+function zoomToFeature(e) {
+			map.fitBounds(e.target.getBounds());
+		}
+
+function onEachFeature(feature, layer) {
+			layer.on({
+				mouseover: highlightFeature,
+				mouseout: resetHighlight,
+				click: zoomToFeature
+			});
+				
+		}		
+
+	function onEachFeaturePct(feature, layer) {
+			layer.on({
+				mouseover: highlightFeaturePct,
+				mouseout: resetHighlightPct,
+				click: zoomToFeature
+			});
+				
+		}	
+		
+		
+		function highlightFeaturePct(e) {
+			var layer = e.target;
+			infoPct.update(layer.feature.properties);
+		}
+		
+function resetHighlightPct(e) {
+			geoson.resetStyle(e.target);
+			info.update();
+		}
+		
+		// control that shows state info on hover
+		var info = L.control();
+
+		info.onAdd = function (map) {
+			this._div = L.DomUtil.create('div', 'info');
+			this._div.id ='info';
+			this.update();
+			return this._div;
+		};
+
+		info.update = function (props) {
+			this._div.innerHTML = '<h4>Ficalite : Nombre de menage fiscaux 2011</h4>' +  (props ?
+				'<b>' + props.NOM_IRIS + '</b> ' + props.RFM2011_NBMEN11  + ' '
+				: '');
+		};
+info.addTo(map);
+		
+		
+		
+		// control that shows state info on hover
+		var infoPct = L.control();
+
+		infoPct.onAdd = function (map) {
+			this._div = L.DomUtil.create('div', 'info');
+			this._div.id ='infoPct';
+			this.update();
+			return this._div;
+		};
+
+		infoPct.update = function (props) {
+			this._div.innerHTML = '<h4>Ficalite : Part des m�nages imposes 2011</h4>' +  (props ?
+				'<b>' + props.NOM_IRIS + '</b> ' + props.RFST2011IRI_PMIMP11 + ' '
+				: '');
+		};
+infoPct.addTo(map);
+		
+		
+/**legendes**/		
+var legend = L.control({position: 'bottomright'});
+
+		legend.onAdd = function (map) {
+
+			var div = L.DomUtil.create('div', 'info legend'),
+				grades = [0, 800, 850, 900, 950, 1000, 1500, 2000],
+				labels = [],
+				from, to;
+
+			for (var i = 0; i < grades.length; i++) {
+				from = grades[i];
+				to = grades[i + 1];
+
+				labels.push(
+					'<i style="background:' + getColor(from + 1) + '"></i> ' +
+					from + (to ? '&ndash;' + to : '+'));
+			}
+			div.id='legende';
+			div.innerHTML = labels.join('<br>');
+			return div;
+		};
+
+				legend.addTo(map);	
+	
+	var legendPct = L.control({position: 'bottomright'});
+
+		legendPct.onAdd = function (map) {
+
+			var div = L.DomUtil.create('div', 'info legend'),
+				grades = [0, 40, 50, 60, 70, 80, 90, 100],
+				labels = [],
+				from, to;
+
+			for (var i = 0; i < grades.length; i++) {
+				from = grades[i];
+				to = grades[i + 1];
+
+				labels.push(
+					'<i style="background:' + getColorPourcent(from + 1) + '"></i> ' +
+					from + (to ? '&ndash;' + to : '+'));
+			}
+			div.id='legendePct';
+			div.innerHTML = labels.join('<br>');
+			return div;
+		};
+
+				legendPct.addTo(map);	
+		
+var geoson;
+var geoson2;
+
+geoson=L.geoJson(iris_data ,{style: styleMap, onEachFeature: onEachFeature});
+geoson2=L.geoJson(iris_data ,{style: styleMapPartMenageImpose, onEachFeature: onEachFeaturePct});
+
+
+var overlayMaps = {
+	"Nombre Menage Fiscaux" : geoson,
+	"Part Menage" : geoson2
+}
+
+//init
+document.getElementById('legende').style.display='none';
+	document.getElementById('info').style.display='none';
+	document.getElementById('infoPct').style.display='none';
+	document.getElementById('legendePct').style.display='none';	
+
+//event
+map.on('baselayerchange', function(a) {
+    //alert("The layer changed to " + a.name);
+	if(a.name=='Nombre Menage Fiscaux')
+	{
+	document.getElementById('legende').style.display='block';
+	document.getElementById('info').style.display='block';
+	document.getElementById('infoPct').style.display='none';
+	document.getElementById('legendePct').style.display='none';
+		
+	}else if (a.name=='Part Menage')
+	{
+	document.getElementById('legende').style.display='none';
+	document.getElementById('info').style.display='none';
+	document.getElementById('infoPct').style.display='block';
+	document.getElementById('legendePct').style.display='block';	
+	}
+	
+});
+
+
+L.control.layers(overlayMaps,null).addTo(map);
+
+
+//Ajout d'un marqueur pour enregistrement de donn�e et affichage par la suite
+// Create the marker that the user drags to add their message to the map
+var marker = L.marker([0, 0], {
+    draggable: true,
+    icon: L.mapbox.marker.icon({
+    'marker-color': color
+    })
+    // Add a form to that marker that lets them specify a message and click Add
+    // to add the data.
+})
+    .bindPopup('<input type="text" id="message" /><br /><button id="add-button">Add</button>')
+    .addTo(map)
+    .openPopup();
+
+// every time the marker is dragged, update the form
+marker.on('dragend', function(e) {
+    marker.openPopup();
+    // When the user clicks Add
+    L.DomEvent.addListener(L.DomUtil.get('add-button'), 'click', function() {
+        // First, clean the potential-HTML they've added to the value.
+        var message = L.DomUtil.get('message').value;
+        // Get the current draggable marker's position and GeoJSON representation
+        var geojson = marker.toGeoJSON();
+        //geojson.properties['marker-color'] = color;
+        geojson.properties.title = message;
+        // And save it to Firebase
+        base.push(geojson);
+        marker.closePopup();
+    });
+});	
+	
+// with a cap of 200, listen for new markers being added to the map
+base.limit(200).on('child_added', function(snapshot) {
+    // And for each new marker, add a featureLayer
+    L.mapbox.featureLayer(snapshot.val())
+        .eachLayer(function(l) {
+            // Which positions markers below the marker you drag, so that
+            // they don't overlap in the z-index
+            l.setZIndexOffset(-1000)
+            // And each marker should have a label with its title.
+            var geojson = l.toGeoJSON();
+            if (geojson && geojson.properties && geojson.properties.title) {
+                l.bindPopup(L.mapbox.sanitize(geojson.properties.title), {
+                    noHide: true
+                });
+            }
+        })
+        .addTo(map);
+});
+
+
+//gestion context menu
+var xMousePosition = 0;
+var yMousePosition = 0;
+document.onmousemove = function(e)
+{
+  xMousePosition = e.clientX + window.pageXOffset;
+  yMousePosition = e.clientY + window.pageYOffset;
+};
+ 
+
+function rename(element)
+{
+alert("Renommer");
+}
+
+function edit(element)
+{
+alert("Editer");
+}
+
+function clickDroit(element)
+{
+var x = document.getElementById('ctxmenu1');
+if(x) x.parentNode.removeChild(x);
+var d = document.createElement('div');
+d.setAttribute('class', 'ctxmenu');
+d.setAttribute('id', 'ctxmenu1');
+element.parentNode.appendChild(d);
+d.style.left = xMousePosition + "px";
+d.style.top = yMousePosition + "px"; 
+d.onmouseover = function(e) { this.style.cursor = 'pointer';} 
+d.onclick = function(e) { element.parentNode.removeChild(d);}
+document.body.onclick = function(e) { element.parentNode.removeChild(d);}
+var p = document.createElement('p');
+d.appendChild(p);
+p.onclick=function() { rename(element) };
+p.setAttribute('class', 'ctxline');
+p.innerHTML = "Renommer";
+var p2 = document.createElement('p');
+d.appendChild(p2);
+p2.onclick=function() { edit(element)}; 
+p2.setAttribute('class', 'ctxline');
+p2.innerHTML = "Editer";
+return false;
+}
+
+
+</script>
+</body>
+</html>
